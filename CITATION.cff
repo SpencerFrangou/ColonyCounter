@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: ColonyCounter
+abstract: >-
+  Quantification of colony formation (clonogenic) assays from flatbed scans of crystal
+  violet stained multi-well plates: well detection, optical-density based colony
+  segmentation with edge handling, a fillable plate map for any experimental layout,
+  design-aware statistics and publication figures.
+type: software
+authors:
+  - family-names: Frangou
+    given-names: Spencer W.
+    affiliation: >-
+      Department of Cell and Cancer Biology, College of Medicine and Life
+      Sciences, The University of Toledo, Toledo, OH, USA
+version: 1.0.0
+date-released: "2026-10-29"
+license: MIT
+repository-code: "https://github.com/SpencerFrangou/ColonyCounter"
+keywords:
+  - clonogenic assay
+  - colony formation
+  - crystal violet
+  - image analysis
+  - cancer biology

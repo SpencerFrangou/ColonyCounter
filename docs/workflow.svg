@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="190" viewBox="0 0 900 190" font-family="Helvetica, Arial, sans-serif" font-size="13">
+<defs><marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#555"/></marker></defs>
+<g fill="#f3f6fa" stroke="#4b6a8a" stroke-width="1.2">
+<rect x="10" y="40" width="150" height="90" rx="8"/><rect x="195" y="40" width="150" height="90" rx="8"/><rect x="380" y="40" width="150" height="90" rx="8"/><rect x="565" y="40" width="150" height="90" rx="8"/><rect x="750" y="40" width="140" height="90" rx="8"/>
+</g>
+<g fill="#222" text-anchor="middle">
+<text x="85" y="66" font-weight="bold">Scans + plate map</text><text x="85" y="86">flatbed scans (TIFF/JPEG)</text><text x="85" y="104">PlateMap.xlsx: wells,</text><text x="85" y="120">controls, comparisons</text>
+<text x="270" y="66" font-weight="bold">Well detection</text><text x="270" y="86">colour mask, lattice,</text><text x="270" y="104">rim-ring circle fit,</text><text x="270" y="120">px/mm from DPI</text>
+<text x="455" y="66" font-weight="bold">Colony segmentation</text><text x="455" y="86">OD = log10(I_bg / I_green)</text><text x="455" y="104">hysteresis + watershed</text><text x="455" y="120">edge exclusion 0.88 R</text>
+<text x="640" y="66" font-weight="bold">Statistics</text><text x="640" y="86">design from layout:</text><text x="640" y="104">blocked / confounded</text><text x="640" y="120">GLM, Holm, BH, g</text>
+<text x="820" y="66" font-weight="bold">Outputs</text><text x="820" y="86">tables, figures,</text><text x="820" y="104">QC overlays,</text><text x="820" y="120">report.html</text>
+</g>
+<g stroke="#555" stroke-width="1.5" marker-end="url(#a)"><line x1="160" y1="85" x2="193" y2="85"/><line x1="345" y1="85" x2="378" y2="85"/><line x1="530" y1="85" x2="563" y2="85"/><line x1="715" y1="85" x2="748" y2="85"/></g>
+<text x="450" y="165" text-anchor="middle" fill="#555" font-size="12">Calibration: colonycounter/cfa_calibrate.py re-derives the OD threshold and the edge exclusion radius for a new scanner, resolution, plate or stain.</text>
+</svg>
