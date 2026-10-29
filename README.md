@@ -1,4 +1,4 @@
-![License](https://img.shields.io/badge/license-MIT-blue) ![Python](https://img.shields.io/badge/Python-%E2%89%A53.10-3776AB?logo=python&logoColor=white) ![Status](https://img.shields.io/badge/status-research%20tool-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-blue) ![Python](https://img.shields.io/badge/Python-%E2%89%A53.10-3776AB?logo=python&logoColor=white) ![Status](https://img.shields.io/badge/status-research%20tool-brightgreen) ![License](https://img.shields.io/badge/license-MIT-blue) ![Python](https://img.shields.io/badge/Python-%E2%89%A53.10-3776AB?logo=python&logoColor=white) ![Status](https://img.shields.io/badge/status-research%20tool-brightgreen) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23780010.svg)](https://doi.org/10.5281/zenodo.23780010)
 
 # ColonyCounter
 
