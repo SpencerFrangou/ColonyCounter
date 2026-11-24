@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "colonycounter"
+dynamic = ["version"]
+description = "Quantification of colony formation (clonogenic) assays from flatbed scans of crystal violet stained multi-well plates"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [{name = "Spencer W. Frangou"}]
+keywords = ["clonogenic assay", "colony formation", "crystal violet", "image analysis", "cancer biology", "flatbed scanner"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+  "Topic :: Scientific/Engineering :: Image Processing",
+]
+dependencies = [
+  "Pillow>=10", "matplotlib>=3.9", "numpy>=1.26", "opencv-python-headless>=4.10", "openpyxl>=3.1",
+  "pandas>=2.2", "scikit-image>=0.24", "scipy>=1.13", "statsmodels>=0.14",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[project.urls]
+Homepage = "https://github.com/SpencerFrangou/ColonyCounter"
+Documentation = "https://github.com/SpencerFrangou/ColonyCounter/blob/main/USAGE.md"
+Repository = "https://github.com/SpencerFrangou/ColonyCounter"
+"Issue tracker" = "https://github.com/SpencerFrangou/ColonyCounter/issues"
+Archive = "https://doi.org/10.5281/zenodo.23780010"
+Registry = "https://bio.tools/colonycounter"
+
+[project.scripts]
+colonycounter = "colonycounter.cli:main"
+
+[tool.setuptools]
+packages = ["colonycounter"]
+
+[tool.setuptools.package-data]
+colonycounter = ["make_offline_wheelhouse.sh"]
+
+[tool.setuptools.dynamic]
+version = {attr = "colonycounter.__version__"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

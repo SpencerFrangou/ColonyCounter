@@ -11,11 +11,12 @@ comparison chooses the statistical model from the layout it finds:
 Count metrics: quasi-Poisson GLM with log(analysed area) offset -> rate ratio. Ratio metrics: OLS on log -> fold.
 Linear metrics: OLS -> difference. Primary endpoints (colony number, stained area) Holm-adjusted per line;
 secondary endpoints BH-adjusted per line. Games-Howell / Welch t, Mann-Whitney, Hedges g also reported.
-Outputs: per_well_metrics.csv, colonies.csv, statistics_contrasts.csv, statistics_design.csv, Figure_<line>.(png|svg|pdf),
-QC overlays with condition labels, and report.html.
+Outputs: per_well_metrics.csv, colonies.csv, well_geometry.csv, statistics_contrasts.csv, statistics_design.csv,
+Figure_<line>.(png|svg|pdf), QC overlays with condition labels, run_info.json (software and package versions,
+settings, plate-map checksum) and report.html.
 """
 import warnings; warnings.filterwarnings("ignore")
-import argparse, os, sys, base64, itertools, datetime
+import argparse, os, sys, base64, itertools, datetime, json, hashlib, platform
 import numpy as np, pandas as pd, cv2
 from scipy import stats
 import statsmodels.api as sm, statsmodels.formula.api as smf
@@ -26,6 +27,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cfa_pipeline as cp
 from cfa_platemap import read_platemap, validate
 from cfa_analysis import set_pub_style, OKABE_ITO, MM, hedges_g, stars
+try: from colonycounter import __version__
+except Exception:
+    try: from __init__ import __version__
+    except Exception: __version__ = "unknown"
 
 METRICS = {"whole_well_equiv": ("Colony number", "primary", "count", "Colonies per well\n(whole-well equiv.)"),
            "area_fraction": ("Stained area fraction", "primary", "log", "Stained area\nfraction"),
@@ -36,8 +41,10 @@ METRICS = {"whole_well_equiv": ("Colony number", "primary", "count", "Colonies p
 
 # ----------------------------------------------------------------------------- image analysis
 def analyse_all(W, settings, out):
+    cp.set_plate_format(int(settings.get("plate_format", 6)))
     cp.RIM = float(settings.get("rim_fraction", 0.88)); cp.MIN_DIAM_MM = float(settings.get("min_diam_mm", 0.15))
-    cp.GROWTH_AREA_MM2 = float(settings.get("growth_area_mm2", 950)); T = float(settings.get("threshold_od", 0.10))
+    if settings.get("growth_area_mm2"): cp.GROWTH_AREA_MM2 = float(settings["growth_area_mm2"])
+    T = float(settings.get("threshold_od", 0.10))
     Cs, Ws, geo = [], [], []
     os.makedirs(f"{out}/QC_overlays", exist_ok=True)
     for plate, g in W.groupby("plate", sort=False):
@@ -202,7 +209,7 @@ def report(P, R, D, settings, out, platemap):
                                                  area_fraction=("area_fraction", "mean"), integrated_od_per_mm2=("integrated_od_per_mm2", "mean"), mean_diam_mm=("mean_diam_mm", "mean")).round(3).reset_index()
     cols = ["comparison", "line", "metric", "design", "model", "estimate_type", "estimate", "ci_low", "ci_high", "p_model", "p_adj", "adjustment", "p_welch", "p_mannwhitney", "rank_test_recommended", "hedges_g"]
     h = [f"<html><head><meta charset='utf-8'><title>Colony formation analysis report</title><style>body{{font-family:Helvetica,Arial,sans-serif;font-size:13px;margin:30px}}table{{border-collapse:collapse}}td,th{{border:1px solid #ccc;padding:3px 6px;text-align:right}}th{{background:#eee}}td:first-child,th:first-child{{text-align:left}}img{{max-width:900px;display:block;margin:6px 0 18px}}h2{{margin-top:30px}}</style></head><body>",
-         f"<h1>Colony formation analysis report</h1><p>Plate map: {os.path.basename(platemap)} &middot; run {datetime.datetime.now():%Y-%m-%d %H:%M} &middot; settings: " + ", ".join(f"{k} = {v}" for k, v in settings.items()) + "</p>",
+         f"<h1>Colony formation analysis report</h1><p>ColonyCounter {__version__} &middot; plate map: {os.path.basename(platemap)} &middot; run {datetime.datetime.now():%Y-%m-%d %H:%M} &middot; settings: " + ", ".join(f"{k} = {v}" for k, v in settings.items()) + "</p>",
          "<h2>1. Design decisions</h2><p>How each comparison was analysed, decided from the plate layout.</p>", D.to_html(index=False, border=0),
          "<h2>2. Summary per condition</h2>", summ.to_html(index=False, border=0),
          "<h2>3. Statistics</h2><p>Primary endpoints (colony number, stained area fraction) are Holm-adjusted within each cell line; secondary endpoints carry Benjamini-Hochberg q-values. Where the residual Shapiro-Wilk p is below 0.01 the rank-based Mann-Whitney p is the safer one to quote.</p>",
@@ -213,11 +220,23 @@ def report(P, R, D, settings, out, platemap):
     for p in sorted(os.listdir(f"{out}/QC_overlays")): h.append(f"<h3>{p}</h3><img src='{img(f'{out}/QC_overlays/{p}')}'>")
     h.append("</body></html>"); open(f"{out}/report.html", "w").write("\n".join(h))
 
+def run_info(platemap, settings, out):
+    """Record what produced this run: software version, Python, package versions, settings, plate map checksum."""
+    import numpy, pandas, scipy, skimage, statsmodels, matplotlib, openpyxl, PIL
+    info = dict(software="ColonyCounter", version=__version__, run=datetime.datetime.now().isoformat(timespec="seconds"),
+                python=platform.python_version(), platform=platform.platform(), opencv=cv2.__version__,
+                packages={m.__name__: m.__version__ for m in (numpy, pandas, scipy, skimage, statsmodels, matplotlib, openpyxl, PIL)},
+                platemap=os.path.basename(platemap), platemap_sha256=hashlib.sha256(open(platemap, "rb").read()).hexdigest(),
+                settings={k: (v if isinstance(v, (int, float, str)) or v is None else str(v)) for k, v in settings.items()})
+    json.dump(info, open(f"{out}/run_info.json", "w"), indent=2); return info
+
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("platemap"); ap.add_argument("--out", default="Results"); a = ap.parse_args()
+    ap = argparse.ArgumentParser(); ap.add_argument("platemap"); ap.add_argument("--out", default="Results")
+    ap.add_argument("--version", action="version", version=f"ColonyCounter {__version__}"); a = ap.parse_args()
     W, controls, comps_df, settings = read_platemap(a.platemap); problems = validate(W, controls, comps_df)
     if problems: sys.exit("Plate map problems:\n  " + "\n  ".join(problems))
-    os.makedirs(a.out, exist_ok=True); print(f"{len(W)} wells on {W.plate.nunique()} plates; lines: {', '.join(W.line.unique())}")
+    os.makedirs(a.out, exist_ok=True); run_info(a.platemap, settings, a.out)
+    print(f"ColonyCounter {__version__}: {len(W)} wells on {W.plate.nunique()} plates; lines: {', '.join(W.line.unique())}")
     C, P = analyse_all(W, settings, a.out)
     comps = comparisons_for(W, controls, comps_df, settings); print(f"{len(comps)} comparisons")
     R, D = run_stats(P, comps, a.out)
