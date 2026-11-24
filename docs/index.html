@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ColonyCounter</title>
+<meta name="description" content="Quantification of colony formation (clonogenic) assays from flatbed scans of crystal violet stained multi-well plates: well detection, optical-density colony segmentation, a fillable plate map and design-aware statistics.">
+<link rel="canonical" href="https://spencerfrangou.github.io/ColonyCounter/">
+<meta property="og:title" content="ColonyCounter">
+<meta property="og:description" content="Count and measure colonies in clonogenic assays from plate scans, with statistics that match the plate layout.">
+<meta property="og:url" content="https://spencerfrangou.github.io/ColonyCounter/">
+<meta property="og:image" content="https://spencerfrangou.github.io/ColonyCounter/social_preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "ColonyCounter",
+  "description": "Quantification of colony formation (clonogenic) assays from flatbed scans of crystal violet stained multi-well plates.",
+  "codeRepository": "https://github.com/SpencerFrangou/ColonyCounter",
+  "programmingLanguage": "Python",
+  "license": "https://opensource.org/licenses/MIT",
+  "identifier": "https://doi.org/10.5281/zenodo.23780010",
+  "author": {"@type": "Person", "name": "Spencer W. Frangou", "@id": "https://orcid.org/0009-0008-1125-4053"}
+}
+</script>
+<style>
+  :root{
+    --navy:#2b1e3a; --accent:#7b3fa0; --ink:#1b2733; --muted:#5b6b78;
+    --paper:#ffffff; --soft:#f6f3f9; --line:#e6e0ec;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink);background:var(--paper);line-height:1.6}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+  header{background:var(--navy);color:#fff;padding:64px 0 56px;border-bottom:4px solid var(--accent)}
+  header h1{font-size:clamp(34px,6vw,56px);margin:0 0 10px;font-weight:800;letter-spacing:-.5px}
+  header p{font-size:clamp(16px,2.4vw,20px);color:#cdb9dc;margin:0 0 26px;max-width:680px}
+  .btns{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{display:inline-block;padding:11px 20px;border-radius:8px;font-weight:600;font-size:15px}
+  .btn.primary{background:var(--accent);color:#fff}
+  .btn.ghost{border:1px solid #8d7aa399;color:#ead9f5}
+  section{padding:52px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:26px;margin:0 0 8px;font-weight:700}
+  .lead{color:var(--muted);margin:0 0 28px;max-width:720px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media(max-width:640px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:20px}
+  .card h3{margin:0 0 6px;font-size:17px;color:var(--navy)}
+  .card p{margin:0;color:var(--muted);font-size:14.5px}
+  img.shot{width:100%;border:1px solid var(--line);border-radius:10px;margin-top:8px;background:#fff}
+  pre{background:var(--navy);color:#f1e9f7;padding:18px 20px;border-radius:10px;overflow:auto;
+    font-size:14px;line-height:1.7}
+  pre .c{color:#b89fcc}
+  code{background:var(--soft);padding:1px 5px;border-radius:4px;font-size:.95em}
+  pre code{background:none;padding:0}
+  .steps{counter-reset:m}
+  .mrow{display:flex;gap:14px;padding:16px 0;border-top:1px solid var(--line);align-items:flex-start}
+  .mrow:first-child{border-top:none}
+  .num{flex:none;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;
+    font-weight:700;display:flex;align-items:center;justify-content:center;font-size:15px}
+  .mrow h3{margin:2px 0 4px;font-size:17px}
+  .mrow p{margin:0;color:var(--muted);font-size:14.5px}
+  .links a{display:inline-block;margin:0 14px 8px 0}
+  footer{padding:40px 0 60px;color:var(--muted);font-size:14px}
+  footer b{color:var(--ink)}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>ColonyCounter</h1>
+    <p>Counts and measures crystal violet stained colonies in colony formation (clonogenic) assays
+    from flatbed scans of 6-, 12-, 24- and 96-well plates, and runs the statistics for the comparison
+    you describe in a plate map.</p>
+    <div class="btns">
+      <a class="btn primary" href="https://github.com/SpencerFrangou/ColonyCounter">View on GitHub</a>
+      <a class="btn ghost" href="#install">Install</a>
+      <a class="btn ghost" href="#start">Quick start</a>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2>What it does</h2>
+    <p class="lead">ColonyCounter locates each well on a scanned plate, converts the stain to optical
+    density against a per-well flat field, segments colonies with explicit handling of the well edge,
+    and returns colony number, colony size distribution, stained area and integrated stain intensity
+    per well. A fillable Excel plate map describes the experimental layout; the statistics are chosen
+    from that layout and the choice is written into the report. One double-click runs everything.</p>
+    <img class="shot" src="workflow.svg" alt="Workflow: plate scans and plate map to per-well measurements, statistics and report">
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Four steps</h2>
+    <div class="steps">
+      <div class="mrow"><div class="num">1</div><div>
+        <h3>Well detection</h3>
+        <p>Wells are found from a crystal violet colour index, placed on the plate lattice and refined
+        by fitting the bright rim ring of each well; the pixel scale comes from the file's DPI and is
+        checked against the well pitch.</p></div></div>
+      <div class="mrow"><div class="num">2</div><div>
+        <h3>Optical density and segmentation</h3>
+        <p>The green channel is converted to OD so that integrated OD is proportional to dye mass.
+        Colonies are segmented by hysteresis thresholding and a watershed split; only the central 88%
+        of the well radius is analysed, colonies are counted by centroid and sized when fully inside.</p></div></div>
+      <div class="mrow"><div class="num">3</div><div>
+        <h3>Plate map</h3>
+        <p>Type the condition into each well of <code>PlateMap.xlsx</code>, name the control per cell
+        line, and optionally list explicit comparisons. One condition per plate, several conditions
+        on a plate, replicates across plates and two cell lines on a plate are all supported.</p></div></div>
+      <div class="mrow"><div class="num">4</div><div>
+        <h3>Design-aware statistics</h3>
+        <p>Plate enters the model as a blocking factor when the layout allows it, and the report states
+        when it does not. Colony number is modelled by a quasi-Poisson GLM with the analysed area as
+        offset; area and intensity by linear models on the log scale; primary endpoints are
+        Holm-adjusted, secondary endpoints carry Benjamini-Hochberg q-values.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>What it measures</h2>
+    <div class="grid">
+      <div class="card"><h3>Per well</h3><p>Colony number (scaled to the whole growth surface),
+        stained area fraction, integrated OD per mm², mean and median colony diameter, mean colony
+        area, mean colony OD, and the full per-colony table.</p></div>
+      <div class="card"><h3>Per comparison</h3><p>Rate ratio (colony number) or fold change (area,
+        intensity) with 95% confidence interval, adjusted p-values, Games-Howell or Welch p,
+        Mann-Whitney p, and Hedges' g with a bootstrap interval.</p></div>
+      <div class="card"><h3>Quality control</h3><p>Overlays of every well with detected colonies
+        and the analysed region, so every number can be checked against the image it came from.</p></div>
+      <div class="card"><h3>Provenance</h3><p>Every results folder contains <code>run_info.json</code>
+        with the versions of ColonyCounter and of every dependency that produced it, and
+        <code>statistics_design.csv</code> with every modelling decision.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2>Install</h2>
+    <p class="lead">Python 3.10 or newer. Three ways, from least to most technical.</p>
+    <div class="steps">
+      <div class="mrow"><div class="num">A</div><div>
+        <h3>Double-click launcher</h3>
+        <p>Download the repository, then open <code>Run_ColonyCounter.command</code> (macOS) or
+        <code>Run_ColonyCounter.bat</code> (Windows). It creates its own Python environment, installs
+        what it needs, writes the plate map on the first run and analyses the plates on the next.</p></div></div>
+      <div class="mrow"><div class="num">B</div><div>
+        <h3>pip</h3>
+        <p><code>pip install colonycounter</code> (from the first PyPI release, version 1.1.0 onwards)
+        installs the <code>colonycounter</code> command.</p></div></div>
+      <div class="mrow"><div class="num">C</div><div>
+        <h3>From source</h3>
+        <p>Clone the repository and <code>pip install -e .</code>, as in the quick start below.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="start">
+  <div class="wrap">
+    <h2>Quick start</h2>
+<pre><span class="c"># get the code and set up an environment</span>
+git clone https://github.com/SpencerFrangou/ColonyCounter.git
+cd ColonyCounter
+python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -e .
+
+<span class="c"># two synthetic plates with known colony numbers, plus a plate map</span>
+python examples/make_synthetic_plates.py --out examples/synthetic
+
+<span class="c"># check the plate map, run the analysis, open the report</span>
+colonycounter check examples/synthetic/PlateMap.xlsx
+colonycounter run examples/synthetic/PlateMap.xlsx --out examples/synthetic/Results
+open examples/synthetic/Results/report.html</pre>
+    <p class="lead" style="margin-top:18px">For your own scans, put the images in a folder, run
+    <code>colonycounter template &lt;folder&gt;</code>, fill in <code>PlateMap.xlsx</code>, and run
+    <code>colonycounter run &lt;folder&gt;/PlateMap.xlsx</code>. The 6-well geometry was validated on
+    300 dpi scans; the 12-, 24- and 96-well formats are supported on synthetic plates so far.
+    <code>cfa_calibrate.py</code> re-derives the two scanner-dependent constants for a new set-up.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Documentation and citation</h2>
+    <p class="links">
+      <a href="https://github.com/SpencerFrangou/ColonyCounter#readme">README</a>
+      <a href="https://github.com/SpencerFrangou/ColonyCounter/blob/main/USAGE.md">Usage guide</a>
+      <a href="https://github.com/SpencerFrangou/ColonyCounter/blob/main/docs/methods.md">Methods</a>
+      <a href="https://github.com/SpencerFrangou/ColonyCounter/blob/main/docs/scanner_settings.md">Scanner settings</a>
+      <a href="https://github.com/SpencerFrangou/ColonyCounter/blob/main/docs/statement_of_need.md">Statement of need</a>
+      <a href="https://github.com/SpencerFrangou/ColonyCounter/blob/main/CHANGELOG.md">Changelog</a>
+      <a href="https://bio.tools/colonycounter">bio.tools</a>
+    </p>
+    <p class="lead">Please cite the archived release: Frangou SW. ColonyCounter: quantification of
+    colony formation assays from plate scans. Zenodo.
+    <a href="https://doi.org/10.5281/zenodo.23780010">doi:10.5281/zenodo.23780010</a>.
+    A <code>CITATION.cff</code> file is included in the repository.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>Spencer W. Frangou</b> · Zhang Lab, Department of Cell and Cancer Biology,
+    The University of Toledo · MIT License ·
+    <a href="https://orcid.org/0009-0008-1125-4053">ORCID 0009-0008-1125-4053</a> ·
+    <a href="https://spencerfrangou.github.io/">spencerfrangou.github.io</a></p>
+  </div>
+</footer>
+</body>
+</html>

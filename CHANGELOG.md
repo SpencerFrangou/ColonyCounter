@@ -21,6 +21,10 @@ input format or the command line.
   12- and 24-well formats; a GitHub Actions workflow running them on Linux, macOS and Windows with
   Python 3.10 to 3.13, and monthly against current dependency releases.
 - `colonycounter/make_offline_wheelhouse.sh` for installing on computers without internet access.
+- A `publish to PyPI` workflow that builds the wheel and source distribution and uploads them to
+  PyPI by trusted publishing when a GitHub release is published; the built wheel was verified in a
+  clean environment (`colonycounter run` on the synthetic plates).
+- A documentation site at https://spencerfrangou.github.io/ColonyCounter/ (`docs/index.html`).
 - `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue templates, `docs/statement_of_need.md`.
 
 ### Changed

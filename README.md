@@ -19,6 +19,15 @@ a count, a size distribution and a stain-mass measure per well that are reproduc
 together with statistics that match how the plates were laid out. `docs/statement_of_need.md` sets out the
 problem and how ColonyCounter differs from existing tools.
 
+## Installation
+
+Three ways, from least to most technical. Double-click `Run_ColonyCounter.command` (macOS) or
+`Run_ColonyCounter.bat` (Windows) from a downloaded copy of the repository: it creates its own Python
+environment and installs what it needs. Or `pip install colonycounter` (from the first PyPI release,
+version 1.1.0 onwards), which installs the `colonycounter` command. Or clone the repository as below.
+Python 3.10 or newer is required in every case; documentation is at
+[spencerfrangou.github.io/ColonyCounter](https://spencerfrangou.github.io/ColonyCounter/).
+
 ## Quick start
 
 ```
