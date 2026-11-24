@@ -16,7 +16,7 @@ FIRST RUN ON A FOLDER OF SCANS
     Controls sheet   the control condition for each cell line
     Comparisons      optional explicit treatment vs control pairs (replace the automatic ones for that line)
     Settings         threshold OD 0.10, rim fraction 0.88, min colony 0.15 mm, plate format, all_pairs
-  A blank generic map with 12 empty plate blocks is in Examples/PlateMap_BLANK_template.xlsx.
+  For a blank map to fill in by hand, run  python colonycounter/cfa_platemap.py template <folder> --blank 12
 
 SECOND RUN ON THE SAME FOLDER (and every run after that)
   Double-click Run_ColonyCounter.command again, choose the same folder. It checks the plate map, analyses every plate
@@ -37,7 +37,7 @@ RUNNING OFFLINE
 
 AFTER A CHANGE OF SCANNER, RESOLUTION, PLATE OR STAIN
   python colonycounter/cfa_calibrate.py <folder>/PlateMap.xlsx --out <folder>/Calibration
-  then set threshold_od and rim_fraction in the Settings sheet from calibration.png (see PROJECT_DOCUMENTATION).
+  then set threshold_od and rim_fraction in the Settings sheet from calibration.png (see docs/methods.md).
 
 COMMAND LINE (no dialogs)
   source .venv/bin/activate            (Windows: .venv\Scripts\activate)

@@ -23,7 +23,7 @@ echo "== checking plate map =="; python colonycounter/cfa_platemap.py check "$FO
 STAMP=$(date +%Y-%m-%d_%H%M); OUT="$FOLDER/Results_$STAMP"; mkdir -p "$OUT"
 echo "== running analysis -> $OUT =="
 python colonycounter/cfa_run.py "$FOLDER/PlateMap.xlsx" --out "$OUT" 2>&1 | grep -v findfont | tee "$OUT/run_log.txt"
-mkdir -p "$OUT/code_used" && cp colonycounter/*.py colonycounter/requirements.txt "$OUT/code_used/" && cp "$FOLDER/PlateMap.xlsx" "$OUT/PlateMap_used.xlsx"
+mkdir -p "$OUT/code_used" && cp colonycounter/*.py requirements.txt "$OUT/code_used/" && cp "$FOLDER/PlateMap.xlsx" "$OUT/PlateMap_used.xlsx"
 open "$OUT/report.html"
 echo; echo "Done. Results, figures, QC overlays, the plate map used and the code used are in: $OUT"
 read -p "Press Enter to close"

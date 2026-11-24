@@ -19,7 +19,7 @@ set OUT=%FOLDER%\Results_%STAMP%
 mkdir "%OUT%" 2>nul
 python colonycounter\cfa_run.py "%FOLDER%\PlateMap.xlsx" --out "%OUT%" > "%OUT%\run_log.txt" 2>&1
 type "%OUT%\run_log.txt" | findstr /v findfont
-mkdir "%OUT%\code_used" 2>nul & copy colonycounter\*.py "%OUT%\code_used\" >nul & copy colonycounter\requirements.txt "%OUT%\code_used\" >nul
+mkdir "%OUT%\code_used" 2>nul & copy colonycounter\*.py "%OUT%\code_used\" >nul & copy requirements.txt "%OUT%\code_used\" >nul
 copy "%FOLDER%\PlateMap.xlsx" "%OUT%\PlateMap_used.xlsx" >nul
 start "" "%OUT%\report.html"
 echo Done. Results are in %OUT%
