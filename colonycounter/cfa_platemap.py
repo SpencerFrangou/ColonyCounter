@@ -25,7 +25,7 @@ DEFAULT_SETTINGS = [("threshold_od", 0.10, "segmentation threshold (OD); 0.06 x 
                     ("rim_fraction", 0.88, "fraction of the fitted rim radius analysed (outer band excluded)"),
                     ("min_diam_mm", 0.15, "smallest object kept (mm equivalent diameter)"),
                     ("plate_format", 6, "wells per plate: 6, 12, 24 or 96"),
-                    ("growth_area_mm2", 950, "nominal growth area per well used for whole-well equivalents"),
+                    ("growth_area_mm2", 950, "nominal growth area per well (mm2) used for whole-well equivalents; 950 / 380 / 190 / 32 for 6 / 12 / 24 / 96 wells"),
                     ("all_pairs", "no", "yes = test every pair of conditions within a line, in addition to the comparisons listed")]
 
 def make_template(folder, out, fmt, blank=0):
@@ -60,7 +60,7 @@ def make_template(folder, out, fmt, blank=0):
     for col in "ABCD": wp.column_dimensions[col].width = 24
     wsx = wb.create_sheet("Settings"); wsx.append(["Parameter", "Value", "Meaning"]); [setattr(x, "font", head) for x in wsx[1]]
     for row in DEFAULT_SETTINGS: wsx.append(list(row))
-    wsx["B5"] = fmt; wsx.column_dimensions["A"].width = 18; wsx.column_dimensions["C"].width = 80
+    wsx["B5"] = fmt; wsx["B6"] = {6: 950, 12: 380, 24: 190, 96: 32}[fmt]; wsx.column_dimensions["A"].width = 18; wsx.column_dimensions["C"].width = 80
     wb.save(out); print(f"template written: {out}  ({len(files)} plates, {fmt}-well)")
 
 def read_platemap(path):

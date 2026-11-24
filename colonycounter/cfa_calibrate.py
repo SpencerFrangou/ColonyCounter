@@ -17,7 +17,7 @@ from cfa_platemap import read_platemap
 
 ap = argparse.ArgumentParser(); ap.add_argument("platemap"); ap.add_argument("--out", default="Calibration"); ap.add_argument("--threshold", type=float, default=None)
 a = ap.parse_args(); os.makedirs(a.out, exist_ok=True)
-W, controls, comps, settings = read_platemap(a.platemap)
+W, controls, comps, settings = read_platemap(a.platemap); cp.set_plate_format(int(settings.get("plate_format", 6)))
 T0 = a.threshold or float(settings.get("threshold_od", 0.10)); Ts = [0.06, 0.08, 0.10, 0.12, 0.14, 0.17, 0.20, 0.25]
 sweep, prof = [], []
 for plate, g in W.groupby("plate", sort=False):

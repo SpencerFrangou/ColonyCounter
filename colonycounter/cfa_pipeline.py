@@ -17,8 +17,26 @@ import numpy as np, cv2, pandas as pd
 from scipy import ndimage as ndi, optimize
 from skimage import filters, morphology, measure, segmentation, feature
 
-WELL_DIAM_MM = 34.8; WELL_PITCH_MM = 39.12; GROWTH_AREA_MM2 = 950.0
+# Plate geometry (standard tissue-culture plates; Corning/Falcon nominal values). The 6-well values were used
+# for all validation on real scans; the other formats are supported by the same code and verified on synthetic plates.
+PLATE_FORMATS = {6: dict(rows=2, cols=3, pitch_mm=39.12, well_diam_mm=34.8, growth_area_mm2=950.0),
+                 12: dict(rows=3, cols=4, pitch_mm=26.01, well_diam_mm=22.1, growth_area_mm2=380.0),
+                 24: dict(rows=4, cols=6, pitch_mm=19.30, well_diam_mm=15.6, growth_area_mm2=190.0),
+                 96: dict(rows=8, cols=12, pitch_mm=9.00, well_diam_mm=6.4, growth_area_mm2=32.0)}
+N_WELLS = 6; WELL_DIAM_MM = 34.8; WELL_PITCH_MM = 39.12; GROWTH_AREA_MM2 = 950.0
 RIM = 0.88; BAND = 0.80; CIRC_MIN = 0.5; MIN_DIAM_MM = 0.15
+ROW_LETTERS = "ABCDEFGH"
+
+def set_plate_format(n_wells):
+    """Select the plate geometry (6, 12, 24 or 96 wells) used by well detection and the whole-well scaling."""
+    global N_WELLS, WELL_DIAM_MM, WELL_PITCH_MM, GROWTH_AREA_MM2
+    f = PLATE_FORMATS[int(n_wells)]
+    N_WELLS, WELL_DIAM_MM, WELL_PITCH_MM, GROWTH_AREA_MM2 = int(n_wells), f["well_diam_mm"], f["pitch_mm"], f["growth_area_mm2"]
+
+def remove_small(ar, min_size):
+    """remove_small_objects across scikit-image versions: 0.26 renamed min_size (exclusive) to max_size (inclusive)."""
+    try: return morphology.remove_small_objects(ar, max_size=int(min_size) - 1)
+    except TypeError: return morphology.remove_small_objects(ar, int(min_size))
 
 def purple_index(im):
     b, g, r = cv2.split(im.astype(np.float32)); return (r + b) / 2 - g
@@ -27,16 +45,17 @@ def stained_mask(im):
     ps = cv2.GaussianBlur(purple_index(im), (0, 0), 2)
     thr = filters.threshold_otsu(ps[ps > 1])
     m = ps > thr
-    m = morphology.remove_small_objects(m, 5000); m = ndi.binary_fill_holes(m); m = morphology.opening(m, morphology.disk(5))
+    m = remove_small(m, max(500, int(0.001 * m.size))); m = ndi.binary_fill_holes(m); m = morphology.opening(m, morphology.disk(5))
     lab = measure.label(m); props = measure.regionprops(lab)
     big = [p.label for p in props if p.area > 0.25 * max(q.area for q in props)]
     return m & np.isin(lab, big), ps, thr
 
-def lattice_wells(mask, n_wells=6):
+def lattice_wells(mask, n_wells=None):
+    """Place the n_rows x n_cols well lattice from the extent of the stained-field mask; landscape or portrait."""
+    n_wells = n_wells or N_WELLS; f = PLATE_FORMATS[n_wells]
     ys, xs = np.nonzero(mask)
     w = np.percentile(xs, 99.5) - np.percentile(xs, 0.5); h = np.percentile(ys, 99.5) - np.percentile(ys, 0.5)
-    if n_wells == 6: n_rows, n_cols = (2, 3) if w > h else (3, 2)
-    else: raise NotImplementedError
+    n_rows, n_cols = (f["rows"], f["cols"]) if w > h else (f["cols"], f["rows"])
     extent = w if n_cols >= n_rows else h
     pitch = extent / ((max(n_rows, n_cols) - 1) + WELL_DIAM_MM / WELL_PITCH_MM)
     rad = pitch * WELL_DIAM_MM / WELL_PITCH_MM / 2
@@ -49,7 +68,7 @@ def lattice_wells(mask, n_wells=6):
                 m = ((xx - cx) ** 2 + (yy - cy) ** 2 <= (0.9 * rad) ** 2) & mask
                 if m.sum() == 0: break
                 cy, cx = ndi.center_of_mass(m)
-            wells.append(dict(name=f"{'ABC'[ri]}{ci + 1}", row=ri, col=ci, cx=float(cx), cy=float(cy), r=float(rad)))
+            wells.append(dict(name=f"{ROW_LETTERS[ri]}{ci + 1}", row=ri, col=ci, cx=float(cx), cy=float(cy), r=float(rad)))
     return wells, n_rows, n_cols, pitch
 
 def ring_points(gray, cx, cy, R, n_ang=720, lo=0.85, hi=1.12, min_prom=15):
@@ -77,9 +96,9 @@ def image_dpi(path):
         d = Image.open(path).info.get("dpi"); return float(d[0]) if d and d[0] > 50 else None
     except Exception: return None
 
-def detect_wells(im, dpi=None):
+def detect_wells(im, dpi=None, n_wells=None):
     mask, ps, thr = stained_mask(im)
-    wells, n_rows, n_cols, pitch = lattice_wells(mask)
+    wells, n_rows, n_cols, pitch = lattice_wells(mask, n_wells)
     gray = cv2.GaussianBlur(cv2.cvtColor(im, cv2.COLOR_BGR2GRAY).astype(np.float32), (0, 0), 1.0)
     fits = []
     for w in wells:
@@ -92,7 +111,7 @@ def detect_wells(im, dpi=None):
         w.update(cx_lat=w["cx"], cy_lat=w["cy"], r_lat=w["r"], cx=float(cx2), cy=float(cy2), r=r_shared, r_free=float(r), n_ring_pts=len(kept))
     # pixel scale from the lattice pitch of the ring-fitted centres (less parallax than the mask extent)
     cs = np.array([[w["cx"], w["cy"]] for w in wells])
-    d = [np.hypot(*(cs[i] - cs[j])) for i in range(6) for j in range(i + 1, 6)]
+    n = len(cs); d = [np.hypot(*(cs[i] - cs[j])) for i in range(n) for j in range(i + 1, n)]
     pitch_px = np.min(d) if len(d) else pitch
     pitch_px = np.median([x for x in d if x < 1.3 * pitch_px])
     px_per_mm_pitch = pitch_px / WELL_PITCH_MM
@@ -100,7 +119,7 @@ def detect_wells(im, dpi=None):
     return wells, dict(px_per_mm_pitch=px_per_mm_pitch, dpi=dpi, n_rows=n_rows, n_cols=n_cols, pitch_px=pitch_px, px_per_mm=px_per_mm, r_ring_px=r_shared, r_ring_mm=r_shared / px_per_mm)
 
 def stain_od(sub, mask, px_per_mm=8.5):
-    k = int(round(7.0 * px_per_mm)) | 1                     # 7 mm flat-field kernel, odd
+    k = int(round(min(7.0, 0.4 * WELL_DIAM_MM) * px_per_mm)) | 1   # 7 mm flat-field kernel (smaller for small wells), odd
     g8 = sub[:, :, 1]; bg = cv2.medianBlur(g8, k).astype(np.float32); g = g8.astype(np.float32) + 1.0
     bg = np.maximum(bg, g); od = np.log10(bg / g); od[~mask] = 0; return od, bg
 
@@ -122,11 +141,11 @@ def analyse_well(im, w, px_per_mm, T=None, overlay=None, plate=""):
     t = float(filters.threshold_otsu(od[rr <= 0.85])) if T is None else T
     min_area_px = max(4, int((MIN_DIAM_MM * px_per_mm) ** 2 * np.pi / 4))
     fg = filters.apply_hysteresis_threshold(od, 0.6 * t, t) & full
-    fg = morphology.remove_small_objects(fg, min_area_px // 2); fg = ndi.binary_fill_holes(fg)
+    fg = remove_small(fg, min_area_px // 2); fg = ndi.binary_fill_holes(fg)
     dist = ndi.distance_transform_edt(fg)
     pk = feature.peak_local_max(dist, min_distance=max(3, int(round(0.4 * px_per_mm))), labels=measure.label(fg), exclude_border=False)
     mk = np.zeros_like(fg, dtype=np.int32); mk[pk[:, 0], pk[:, 1]] = np.arange(1, len(pk) + 1)
-    lab = segmentation.watershed(-dist, mk, mask=fg); lab = morphology.remove_small_objects(lab, min_area_px)
+    lab = segmentation.watershed(-dist, mk, mask=fg); lab = remove_small(lab, min_area_px)
     cols = []; keep_lab = np.zeros(lab.max() + 1, bool); counted = 0
     ccx, ccy = w["cx"] - x0, w["cy"] - y0
     for p in measure.regionprops(lab, intensity_image=od):
