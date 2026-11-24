@@ -1,6 +1,8 @@
-![License](https://img.shields.io/badge/license-MIT-blue) ![Python](https://img.shields.io/badge/Python-%E2%89%A53.10-3776AB?logo=python&logoColor=white) ![Status](https://img.shields.io/badge/status-research%20tool-brightgreen) ![License](https://img.shields.io/badge/license-MIT-blue) ![Python](https://img.shields.io/badge/Python-%E2%89%A53.10-3776AB?logo=python&logoColor=white) ![Status](https://img.shields.io/badge/status-research%20tool-brightgreen) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23780010.svg)](https://doi.org/10.5281/zenodo.23780010)
+[![tests](https://github.com/SpencerFrangou/ColonyCounter/actions/workflows/tests.yml/badge.svg)](https://github.com/SpencerFrangou/ColonyCounter/actions/workflows/tests.yml) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23780010.svg)](https://doi.org/10.5281/zenodo.23780010) [![bio.tools](https://img.shields.io/badge/bio.tools-colonycounter-orange)](https://bio.tools/colonycounter) ![Python](https://img.shields.io/badge/Python-%E2%89%A53.10-3776AB?logo=python&logoColor=white) ![License](https://img.shields.io/badge/license-MIT-blue) [![ORCID](https://img.shields.io/badge/ORCID-0009--0008--1125--4053-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0009-0008-1125-4053)
 
 # ColonyCounter
+
+ColonyCounter counts and measures crystal violet stained colonies in colony formation (clonogenic) assays from flatbed scanner images of 6-, 12-, 24- and 96-well plates, and runs the statistics for the comparison you describe in a plate map.
 
 Quantification of colony formation (clonogenic) assays from flatbed scans of crystal violet stained multi-well plates. ColonyCounter locates each well, converts the stain to optical density, segments colonies with explicit handling of the well edge, and returns colony number, colony size distribution, stained area and integrated stain intensity per well. A fillable Excel plate map describes any experimental layout (one condition per plate, several conditions on a plate, replicates across plates, more than one cell line on a plate); the statistics are chosen from that layout and the choice is reported. One double-click runs everything and opens a report. The repository contains code and a synthetic example only; no research data.
 
@@ -10,6 +12,13 @@ Quantification of colony formation (clonogenic) assays from flatbed scans of cry
 
 For every well: colony number (counted by centroid within the analysed area and scaled to the whole growth surface), stained area fraction, integrated optical density per mm² (proportional to dye mass), mean and median colony diameter, mean colony area, mean colony OD, and the full per-colony table (area, equivalent diameter, OD, circularity, radial position). For every comparison: a rate ratio (colony number) or fold change (area, intensity) with 95% confidence interval, adjusted p-values, Games–Howell or Welch p, Mann–Whitney p, and Hedges' g with a bootstrap interval.
 
+## Who it is for
+
+Laboratories that score clonogenic or colony formation assays by hand or with per-image ImageJ macros, and want
+a count, a size distribution and a stain-mass measure per well that are reproducible across people and days,
+together with statistics that match how the plates were laid out. `docs/statement_of_need.md` sets out the
+problem and how ColonyCounter differs from existing tools.
+
 ## Quick start
 
 ```
@@ -17,16 +26,21 @@ git clone https://github.com/SpencerFrangou/ColonyCounter.git
 cd ColonyCounter
 python3 -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+pip install -e .                                        # installs the `colonycounter` command (optional)
 python examples/make_synthetic_plates.py --out examples/synthetic   # two synthetic plates + plate map
 python colonycounter/cfa_run.py examples/synthetic/PlateMap.xlsx --out examples/synthetic/Results
 open examples/synthetic/Results/report.html
 ```
 
+With the package installed the same steps are `colonycounter template <folder>`, `colonycounter check <folder>/PlateMap.xlsx`
+and `colonycounter run <folder>/PlateMap.xlsx --out <folder>/Results`; `colonycounter version` prints the version, and
+every results folder contains `run_info.json` with the versions of ColonyCounter and of every dependency that produced it.
+
 Or, without a terminal: double-click `Run_ColonyCounter.command` (macOS) or `Run_ColonyCounter.bat` (Windows). It builds the environment on first use, checks and installs missing packages, asks for a folder of scans, writes `PlateMap.xlsx` into it on the first run and analyses the plates on the next.
 
 ## The plate map
 
-`python colonycounter/cfa_platemap.py template <folder>` writes `PlateMap.xlsx` with one block per scan (or `--blank 12` for empty blocks to fill by hand; `--format 6|12|24|96`). In the **PlateMap** sheet, type the condition into each well; leave a well blank to ignore it; write `Line:Condition` when a plate carries two cell lines. In **Controls**, name the control condition per cell line; every other condition of that line is compared with it. In **Comparisons**, optionally list explicit treatment/control pairs; these replace the automatic ones for that line. **Settings** holds the OD threshold (0.10), the analysed rim fraction (0.88), the minimum colony diameter (0.15 mm), the plate format and an all-pairs switch. `cfa_platemap.py check` validates the map before a run.
+`python colonycounter/cfa_platemap.py template <folder>` writes `PlateMap.xlsx` with one block per scan (or `--blank 12` for empty blocks to fill by hand; `--format 6|12|24|96`; the 6-well geometry was validated on real scans, the other formats on synthetic plates so far). In the **PlateMap** sheet, type the condition into each well; leave a well blank to ignore it; write `Line:Condition` when a plate carries two cell lines. In **Controls**, name the control condition per cell line; every other condition of that line is compared with it. In **Comparisons**, optionally list explicit treatment/control pairs; these replace the automatic ones for that line. **Settings** holds the OD threshold (0.10), the analysed rim fraction (0.88), the minimum colony diameter (0.15 mm), the plate format and an all-pairs switch. `cfa_platemap.py check` validates the map before a run.
 
 ## How the statistics adapt to the layout
 
@@ -43,12 +57,14 @@ Wells are found from a crystal violet colour index, placed on the plate lattice 
 ## Repository layout
 
 ```
-colonycounter/      cfa_pipeline.py (image analysis), cfa_platemap.py (plate map), cfa_run.py (driver, statistics, figures, report),
-                cfa_calibrate.py (parameter calibration), cfa_analysis.py (figure style, statistics helpers), ensure_env.py
-examples/       make_synthetic_plates.py: synthetic plates and plate map for trying the software
-tests/          test_synthetic.py: end-to-end check that generated colony counts are recovered
-docs/           methods.md, scanner_settings.md, workflow.svg
+colonycounter/  cfa_pipeline.py (image analysis), cfa_platemap.py (plate map), cfa_run.py (driver, statistics, figures, report),
+                cfa_calibrate.py (parameter calibration), cfa_analysis.py (figure style, statistics helpers), cli.py (the
+                colonycounter command), ensure_env.py, make_offline_wheelhouse.sh
+examples/       make_synthetic_plates.py: synthetic plates (any format) and plate map for trying the software
+tests/          unit tests (plate map, image-analysis helpers, statistics) and synthetic end-to-end tests; run with pytest
+docs/           statement_of_need.md, methods.md, scanner_settings.md, workflow.svg
 Run_ColonyCounter.command / .bat   one-click launchers
+CHANGELOG.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md, CITATION.cff, pyproject.toml
 ```
 
 ## Validation
@@ -59,10 +75,25 @@ On real 300 dpi scans of six 6-well plates (two cell lines, three conditions eac
 
 Franken et al., Nat Protoc 2006 (colony definition); Brix et al., Nat Protoc 2021 and Radiat Oncol 2020 (clonogenic growth analysis, cellular cooperation); Guzmán et al., PLoS One 2014 (ColonyArea); Cai et al., Int J Radiat Biol 2011 (calibration against manual counts); Bewes et al., Phys Med Biol 2008 (edge handling); Brzozowska et al., Radiat Environ Biophys 2019 (colony size distributions); Braselmann et al., Radiat Oncol 2015 (CFAssay, quasi-likelihood modelling of colony counts). DOIs are listed in `docs/methods.md`.
 
+## Contributing and support
+
+Bug reports, questions and feature requests go to the [issue tracker](https://github.com/SpencerFrangou/ColonyCounter/issues);
+`CONTRIBUTING.md` describes how to propose a change and run the tests. Changes are listed in `CHANGELOG.md`.
+
+## Citation
+
+If you use ColonyCounter, please cite the archived release:
+
+Frangou, S. W. (2026). ColonyCounter (v1.0.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.23780010
+
+`CITATION.cff` carries the same reference in machine-readable form (GitHub's "Cite this repository" button gives APA and
+BibTeX). The tool is registered at [bio.tools/colonycounter](https://bio.tools/colonycounter).
+
 ## Author
 
-Spencer W. Frangou, Department of Cell and Cancer Biology, College of Medicine and Life Sciences, The University of Toledo.
+Spencer W. Frangou ([ORCID 0009-0008-1125-4053](https://orcid.org/0009-0008-1125-4053)), Department of Cell and Cancer
+Biology, College of Medicine and Life Sciences, The University of Toledo.
 
 ## License
 
-MIT. See `CITATION.cff` for how to cite.
+MIT.
