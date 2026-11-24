@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Usage question
+    url: https://github.com/SpencerFrangou/ColonyCounter/issues/new?labels=question
+    about: Ask about settings for a new scanner or stain, or how to read the statistics.
